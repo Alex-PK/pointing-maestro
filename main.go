@@ -15,27 +15,39 @@ type templateHandler struct {
 	templ *template.Template
 }
 
-func (t *templateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (t *templateHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	t.once.Do(func() {
 		t.templ = template.Must(template.ParseFiles(filepath.Join("tpl", t.filename)))
 	})
-	t.templ.Execute(w, nil)
+	t.templ.Execute(res, nil)
+}
+
+type room struct {
+	name string
 }
 
 type roomHandler struct {
-
+	rooms *map[string]*room
 }
 
-func (room *roomHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
+func (self *roomHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
 	id := vars["id"]
-	w.Write([]byte(id))
+
+	roomdata, ok := (*self.rooms)[id]
+	if !ok {
+		roomdata = &room{ name: id }
+		(*self.rooms)[id] = roomdata
+	}
+
+	res.Write([]byte(roomdata.name))
 }
 
 func main() {
+	rooms := make(map[string]*room)
 	router := mux.NewRouter()
 	router.Handle("/", &templateHandler{filename: "home.html"});
-	router.Handle("/{id:[0-9]+}", &roomHandler{});
+	router.Handle("/room/{id:[a-zA-z0-9_-]+}", &roomHandler{rooms: &rooms});
 
 	http.Handle("/", router)
 
