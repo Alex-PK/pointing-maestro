@@ -22,32 +22,13 @@ func (t *templateHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) 
 	t.templ.Execute(res, nil)
 }
 
-type room struct {
-	name string
-}
-
-type roomHandler struct {
-	rooms *map[string]*room
-}
-
-func (self *roomHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	vars := mux.Vars(req)
-	id := vars["id"]
-
-	roomdata, ok := (*self.rooms)[id]
-	if !ok {
-		roomdata = &room{ name: id }
-		(*self.rooms)[id] = roomdata
-	}
-
-	res.Write([]byte(roomdata.name))
-}
 
 func main() {
 	rooms := make(map[string]*room)
 	router := mux.NewRouter()
 	router.Handle("/", &templateHandler{filename: "home.html"});
 	router.Handle("/room/{id:[a-zA-z0-9_-]+}", &roomHandler{rooms: &rooms});
+	router.Handle("/msg/{id:[a-zA-z0-9_-]+}", &msgHandler{rooms: &rooms});
 
 	http.Handle("/", router)
 
