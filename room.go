@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/gorilla/websocket"
 	"log"
+	"encoding/json"
 )
 
 const (
@@ -17,7 +18,7 @@ var upgrader = &websocket.Upgrader{
 
 type room struct {
 	name    string
-	msg     chan []byte
+	msg     chan *clientMsg
 	join    chan *client
 	leave   chan *client
 	clients map[*client]bool
@@ -26,7 +27,7 @@ type room struct {
 func newRoom(name string) *room {
 	return &room {
 		name:    name,
-		msg:     make(chan []byte),
+		msg:     make(chan *clientMsg),
 		join:    make(chan *client),
 		leave:   make(chan *client),
 		clients: make(map[*client]bool),
@@ -47,9 +48,10 @@ func (self *room) run() {
 			log.Println("Client left")
 
 		case msg := <- self.msg:
+			response := self.processMessage(msg)
 			for client := range self.clients {
 				select {
-				case client.send <- msg:
+				case client.send <- response:
 					// TODO
 					log.Println(" -- sent to client")
 
@@ -61,4 +63,24 @@ func (self *room) run() {
 			}
 		}
 	}
+}
+
+func (self *room) processMessage(clientMsg *clientMsg) []byte {
+	voteReceived := MsgGetVote{}
+	cmdReceived := MsgGetCmd{}
+
+	if err := json.Unmarshal(clientMsg.msg, voteReceived); err != nil {
+		// save the vote, send the MsgSendVote message
+		clientMsg.client.vote = voteReceived.vote
+		sendVote, _ := json.Marshal(MsgSendVote{user: clientMsg.client.name})
+		return sendVote
+	}
+
+	if err := json.Unmarshal(clientMsg.msg, cmdReceived); err != nil {
+		// check the command, send response
+
+		return clientMsg.msg
+	}
+
+	return clientMsg.msg
 }

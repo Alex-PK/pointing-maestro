@@ -6,14 +6,21 @@ import (
 
 type client struct {
 	socket *websocket.Conn
-	send chan []byte
-	room *room
+	send   chan []byte
+	room   *room
+	name   string
+	vote   string
+}
+
+type clientMsg struct {
+	client *client
+	msg []byte
 }
 
 func (self *client) read() {
 	for {
 		if _, msg, err := self.socket.ReadMessage(); err == nil {
-			self.room.msg <- msg
+			self.room.msg <- &clientMsg{client: self, msg: msg }
 		} else {
 			break
 		}
