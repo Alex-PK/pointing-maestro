@@ -8,6 +8,7 @@ import (
 
 type roomHandler struct {
 	rooms *map[string]*room
+	tpls *templates
 }
 
 func (self *roomHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
@@ -22,5 +23,11 @@ func (self *roomHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		log.Printf("Created new room %s\n", id)
 	}
 
-	res.Write([]byte(room.name))
+	data := struct {
+		Room string
+	}{
+		Room: room.name,
+	}
+
+	self.tpls.render(res, "room.html", data)
 }
