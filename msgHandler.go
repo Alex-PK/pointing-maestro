@@ -7,19 +7,14 @@ import (
 )
 
 type msgHandler struct {
-	rooms *map[string]*room
+	rooms *rooms
 }
 
 func (self *msgHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	id := vars["id"]
 
-	room, ok := (*self.rooms)[id]
-	if !ok {
-		room = newRoom(id)
-		(*self.rooms)[id] = room
-		go room.run()
-	}
+	room := self.rooms.get(id)
 
 	socket, err := upgrader.Upgrade(res, req, nil)
 	if err != nil {

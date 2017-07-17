@@ -4,6 +4,7 @@ import (
 	"github.com/gorilla/websocket"
 	"log"
 	"encoding/json"
+	"sync"
 )
 
 const (
@@ -16,6 +17,37 @@ var upgrader = &websocket.Upgrader{
 	WriteBufferSize: messageBufferSize,
 }
 
+/*
+ * Rooms collection
+ */
+type rooms struct {
+	lock sync.RWMutex
+	rooms map[string]*room
+}
+
+func newRooms() *rooms {
+	return &rooms{rooms: make(map[string]*room)}
+}
+
+func (self *rooms) get(name string) *room {
+	self.lock.RLock();
+	room, ok := self.rooms[name]
+	if !ok 	{
+		self.lock.RUnlock()
+		self.lock.Lock()
+		room = newRoom(name)
+		self.rooms[name] = room
+		self.lock.Unlock()
+		go room.run()
+	}
+
+	return room
+}
+
+
+/*
+ * Single room
+ */
 type room struct {
 	name    string
 	msg     chan *clientMsg
