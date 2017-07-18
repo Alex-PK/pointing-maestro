@@ -20,9 +20,10 @@ func main() {
 
 	router := mux.NewRouter()
 
-	router.Handle("/", &homeHandler{tpls});
-	router.Handle("/room/{id:[a-zA-z0-9_-]+}", &roomHandler{rooms: rooms, tpls: tpls});
-	router.Handle("/msg/{id:[a-zA-z0-9_-]+}", &msgHandler{rooms: rooms});
+	router.Handle("/", &homeHandler{tpls})
+	router.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", http.FileServer(http.Dir("assets/"))))
+	router.Handle("/room/{id:[a-zA-z0-9_-]+}", &roomHandler{rooms: rooms, tpls: tpls})
+	router.Handle("/msg/{id:[a-zA-z0-9_-]+}", &msgHandler{rooms: rooms})
 
 	http.Handle("/", router)
 
