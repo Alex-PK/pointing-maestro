@@ -3,7 +3,11 @@ let app = new Vue({
     template: `
         <div class="container-fluid">
             <div class="row">
-                <h1>Home</h1>
+                <div class="col">
+                    <nav class="navbar bg-faded">
+                        <h1 class="navbar-brand">Home</h1>
+                    </nav>
+                </div>
             </div>
     
             <div class="row">
