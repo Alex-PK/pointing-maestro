@@ -26,6 +26,7 @@ func (self *msgHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		socket: socket,
 		send:   make(chan []byte, messageBufferSize),
 		room:   room,
+		name:   "dummy",
 	}
 
 	room.join <- client

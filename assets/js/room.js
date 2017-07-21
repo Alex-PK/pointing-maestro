@@ -8,7 +8,7 @@
 			<div class="row">
 				<div class="col">
 					<nav class="navbar bg-faded">
-						<h1 class="navbar-brand">Room {{ name }}</h1>
+						<h1 class="navbar-brand">Room {{ roomName }}</h1>
 					</nav>
 				</div>
 			</div>
@@ -36,8 +36,10 @@
 		},
 
 		data: () => ({
-			name: null,
+			roomName: null,
 			socket: null,
+
+			userName: 'dummy',
 
 			storyDesc: '',
 			vote: null,
@@ -51,7 +53,7 @@
 		},
 
 		mounted() {
-			this.name = window.app.config.roomName;
+			this.roomName = window.app.config.roomName;
 			this.socketConnect();
 		},
 
@@ -62,11 +64,11 @@
 			},
 
 			onSocketMsg(msg) {
-				console.log('socket message', msg);
+				console.log('socket message', msg.data);
 			},
 
 			socketConnect() {
-				let wsUrl = window.location.hostname + ':' + window.location.port + '/msg/' + this.name;
+				let wsUrl = window.location.hostname + ':' + window.location.port + '/msg/' + this.roomName;
 				let socket = new WebSocket('ws://' + wsUrl);
 
 				socket.onclose = this.onSocketClose;
@@ -97,6 +99,7 @@
 			sendVote() {
 				let msg = {
 					cmd: 'vote',
+					user: this.userName,
 					vote: this.vote
 				};
 

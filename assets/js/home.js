@@ -27,7 +27,7 @@ let app = new Vue({
     `,
 
 	data: () => ({
-		name: '',
+		roomName: '',
 		error: ''
 	}),
 
@@ -39,8 +39,8 @@ let app = new Vue({
 
 	methods: {
 		checkName() {
-			if (!/^[a-z0-9_-]+$/.test(this.name)) {
-				this.error = 'Please provide a valid room name';
+			if (!/^[a-z0-9_-]+$/.test(this.roomName)) {
+				this.error = 'Please provide a valid room roomName';
 				return false;
 			}
 			this.error = '';
@@ -51,7 +51,7 @@ let app = new Vue({
 			if (!this.checkName()) {
 				return;
 			}
-			window.location.href = '/room/' + this.name;
+			window.location.href = '/room/' + this.roomName;
 		}
 	}
 });

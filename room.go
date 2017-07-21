@@ -8,12 +8,12 @@ import (
 )
 
 const (
-	socketBuffSize = 1024
+	socketBuffSize    = 1024
 	messageBufferSize = 256
 )
 
 var upgrader = &websocket.Upgrader{
-	ReadBufferSize:socketBuffSize,
+	ReadBufferSize:  socketBuffSize,
 	WriteBufferSize: messageBufferSize,
 }
 
@@ -21,7 +21,7 @@ var upgrader = &websocket.Upgrader{
  * Rooms collection
  */
 type rooms struct {
-	lock sync.RWMutex
+	lock  sync.RWMutex
 	rooms map[string]*room
 }
 
@@ -32,7 +32,7 @@ func newRooms() *rooms {
 func (self *rooms) get(name string) *room {
 	self.lock.RLock();
 	room, ok := self.rooms[name]
-	if !ok 	{
+	if !ok {
 		self.lock.RUnlock()
 		self.lock.Lock()
 		room = newRoom(name)
@@ -43,7 +43,6 @@ func (self *rooms) get(name string) *room {
 
 	return room
 }
-
 
 /*
  * Single room
@@ -57,7 +56,7 @@ type room struct {
 }
 
 func newRoom(name string) *room {
-	return &room {
+	return &room{
 		name:    name,
 		msg:     make(chan *clientMsg),
 		join:    make(chan *client),
@@ -70,16 +69,16 @@ func (self *room) run() {
 	log.Printf("Running room %s\n", self.name)
 	for {
 		select {
-		case client := <- self.join:
+		case client := <-self.join:
 			self.clients[client] = true
 			log.Println("New client joined")
 
-		case client := <- self.leave:
+		case client := <-self.leave:
 			delete(self.clients, client)
 			close(client.send)
 			log.Println("Client left")
 
-		case msg := <- self.msg:
+		case msg := <-self.msg:
 			response := self.processMessage(msg)
 			for client := range self.clients {
 				select {
@@ -98,20 +97,33 @@ func (self *room) run() {
 }
 
 func (self *room) processMessage(clientMsg *clientMsg) []byte {
-	voteReceived := MsgGetVote{}
-	cmdReceived := MsgGetCmd{}
+	msg := Msg{}
 
-	if err := json.Unmarshal(clientMsg.msg, voteReceived); err != nil {
-		// save the vote, send the MsgSendVote message
-		clientMsg.client.vote = voteReceived.vote
-		sendVote, _ := json.Marshal(MsgSendVote{user: clientMsg.client.name})
-		return sendVote
-	}
+	if err := json.Unmarshal(clientMsg.msg, msg); err != nil {
+		switch msg.Cmd {
+		case "vote":
+			log.Printf(" -- received vote: %s, %s\n", msg.Vote, clientMsg.msg)
+			// save the vote, send the MsgSendVote message
+			clientMsg.client.vote = msg.Vote
+			sendVote, err := json.Marshal(Msg{Cmd: "vote", User: clientMsg.client.name})
+			if err == nil {
+				log.Printf(" -- error encoding message: %s\n", err)
+			}
+			return sendVote
 
-	if err := json.Unmarshal(clientMsg.msg, cmdReceived); err != nil {
-		// check the command, send response
+		case "storyDesc":
+			sendStoryDesc, err := json.Marshal(Msg{Cmd:"storyDesc", StoryDesc: msg.StoryDesc})
+			if err == nil {
+				log.Printf(" -- error encoding message: %s\n", err)
+			}
+			return sendStoryDesc
 
-		return clientMsg.msg
+		default:
+			log.Printf(" -- unknown command: %s\n", msg.Cmd)
+		}
+
+	} else {
+		log.Printf(" -- error decoding message: %s\n", err)
 	}
 
 	return clientMsg.msg
