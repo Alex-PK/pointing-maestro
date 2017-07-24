@@ -99,24 +99,24 @@ func (self *room) run() {
 func (self *room) processMessage(clientMsg *clientMsg) []byte {
 	msg := Msg{}
 
-	if err := json.Unmarshal(clientMsg.msg, msg); err != nil {
+	if err := json.Unmarshal(clientMsg.msg, &msg); err != nil {
 		switch msg.Cmd {
 		case "vote":
 			log.Printf(" -- received vote: %s, %s\n", msg.Vote, clientMsg.msg)
 			// save the vote, send the MsgSendVote message
 			clientMsg.client.vote = msg.Vote
-			sendVote, err := json.Marshal(Msg{Cmd: "vote", User: clientMsg.client.name})
+			sendVote, err := json.Marshal(&Msg{Cmd: "vote", User: clientMsg.client.name})
 			if err == nil {
-				log.Printf(" -- error encoding message: %s\n", err)
+				return sendVote
 			}
-			return sendVote
+			log.Printf(" -- error encoding message: %s\n", err)
 
 		case "storyDesc":
-			sendStoryDesc, err := json.Marshal(Msg{Cmd:"storyDesc", StoryDesc: msg.StoryDesc})
+			sendStoryDesc, err := json.Marshal(&Msg{Cmd: "storyDesc", StoryDesc: msg.StoryDesc})
 			if err == nil {
-				log.Printf(" -- error encoding message: %s\n", err)
+				return sendStoryDesc
 			}
-			return sendStoryDesc
+			log.Printf(" -- error encoding message: %s\n", err)
 
 		default:
 			log.Printf(" -- unknown command: %s\n", msg.Cmd)
