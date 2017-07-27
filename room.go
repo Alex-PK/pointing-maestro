@@ -79,7 +79,7 @@ func (self *room) run() {
 			log.Println("Client left")
 
 		case msg := <-self.msg:
-			response := self.processMessage(msg)
+			response, _ := self.processMessage(msg) // TODO: manage error
 			for client := range self.clients {
 				select {
 				case client.send <- response:
@@ -96,7 +96,7 @@ func (self *room) run() {
 	}
 }
 
-func (self *room) processMessage(clientMsg *clientMsg) []byte {
+func (self *room) processMessage(clientMsg *clientMsg) ([]byte, error) {
 	msg := Msg{}
 
 	if err := json.Unmarshal(clientMsg.msg, &msg); err == nil {
@@ -112,7 +112,7 @@ func (self *room) processMessage(clientMsg *clientMsg) []byte {
 
 			sendVote, err := json.Marshal(&Msg{Cmd: "vote", User: clientMsg.client.name})
 			if err == nil {
-				return sendVote
+				return sendVote, nil
 			}
 			log.Printf(" -- error encoding message: %s\n", err)
 
@@ -127,7 +127,7 @@ func (self *room) processMessage(clientMsg *clientMsg) []byte {
 
 			sendVotes, err := json.Marshal(&votesMsg)
 			if err == nil {
-				return sendVotes
+				return sendVotes, nil
 			}
 			log.Printf(" -- error encoding message: %s\n", err)
 
@@ -139,14 +139,14 @@ func (self *room) processMessage(clientMsg *clientMsg) []byte {
 
 			sendClearVotes, err := json.Marshal(&Msg{Cmd: "clearVotes"})
 			if err == nil {
-				return sendClearVotes
+				return sendClearVotes, nil
 			}
 			log.Printf(" -- error encoding message: %s\n", err)
 
 		case "storyDesc":
 			sendStoryDesc, err := json.Marshal(&Msg{Cmd: "storyDesc", StoryDesc: msg.StoryDesc})
 			if err == nil {
-				return sendStoryDesc
+				return sendStoryDesc, nil
 			}
 			log.Printf(" -- error encoding message: %s\n", err)
 
@@ -158,5 +158,10 @@ func (self *room) processMessage(clientMsg *clientMsg) []byte {
 		log.Printf(" -- error decoding message: %s\n", err)
 	}
 
-	return clientMsg.msg
+	sendError, err := json.Marshal(&Msg{Cmd: "error", Msg: "Error processing message"}) // TODO
+	if err != nil {
+		return nil, err
+	}
+
+	return sendError, nil
 }
