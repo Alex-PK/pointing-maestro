@@ -25,6 +25,10 @@
 							<button class="btn btn-outline-primary" :class="{ active: v == vote }" type="button" @click.prevent="setVote(v)" style="margin-left: 0;">{{ v }}</button>
       			</div>
 				</div>
+				
+				<div class="form-group">
+					<button class="btn btn-outline-info" type="button" @click.prevent="sendShowVotes">Show votes</button>
+					<button class="btn btn-outline-danger" type="button" @click.prevent="sendClearVotes">Clear votes</button>
 			</form>
 		</div>
     `,
@@ -42,7 +46,7 @@
 			userName: 'dummy',
 
 			storyDesc: '',
-			vote: null,
+			vote: '',
 			votes: {},
 		}),
 
@@ -107,9 +111,23 @@
 			},
 
 			setVote(v) {
-				this.vote = v;
+				this.vote = '' + v;
 				this.sendVote();
-			}
+			},
+
+			sendShowVotes() {
+				let msg = {
+					cmd: 'showVotes'
+				};
+				this.socketSend(msg);
+			},
+
+			sendClearVotes() {
+				let msg = {
+					cmd: 'clearVotes'
+				};
+				this.socketSend(msg);
+			},
 
 		}
 	});

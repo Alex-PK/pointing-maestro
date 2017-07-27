@@ -99,15 +99,47 @@ func (self *room) run() {
 func (self *room) processMessage(clientMsg *clientMsg) []byte {
 	msg := Msg{}
 
-	if err := json.Unmarshal(clientMsg.msg, &msg); err != nil {
+	if err := json.Unmarshal(clientMsg.msg, &msg); err == nil {
 		switch msg.Cmd {
 		case "vote":
 			log.Printf(" -- received vote: %s, %s\n", msg.Vote, clientMsg.msg)
 			// save the vote, send the MsgSendVote message
 			clientMsg.client.vote = msg.Vote
+
+			for client := range self.clients {
+				log.Printf(" -- client %s voted %s\n", client.name, client.vote)
+			}
+
 			sendVote, err := json.Marshal(&Msg{Cmd: "vote", User: clientMsg.client.name})
 			if err == nil {
 				return sendVote
+			}
+			log.Printf(" -- error encoding message: %s\n", err)
+
+		case "showVotes":
+			log.Printf(" -- showing votes\n")
+			votesMsg := Msg{Cmd: "showVotes", VoteList: make(map[string]string)}
+
+			for client := range self.clients {
+				log.Printf(" -- client %s voted %s\n", client.name, client.vote)
+				votesMsg.VoteList[client.name] = client.vote
+			}
+
+			sendVotes, err := json.Marshal(&votesMsg)
+			if err == nil {
+				return sendVotes
+			}
+			log.Printf(" -- error encoding message: %s\n", err)
+
+		case "clearVotes":
+			log.Printf(" -- clearing votes\n")
+			for client := range self.clients {
+				client.vote = "";
+			}
+
+			sendClearVotes, err := json.Marshal(&Msg{Cmd: "clearVotes"})
+			if err == nil {
+				return sendClearVotes
 			}
 			log.Printf(" -- error encoding message: %s\n", err)
 
