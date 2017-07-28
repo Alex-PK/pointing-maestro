@@ -5,6 +5,7 @@ import (
 	"log"
 	"encoding/json"
 	"sync"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -79,7 +80,12 @@ func (self *room) run() {
 			log.Println("Client left")
 
 		case msg := <-self.msg:
-			response, _ := self.processMessage(msg) // TODO: manage error
+			response, err := self.processMessage(msg)
+			if err != nil {
+				log.Printf(" -- failed to create a response: %v", err)
+				continue
+			}
+
 			for client := range self.clients {
 				select {
 				case client.send <- response:
@@ -99,69 +105,53 @@ func (self *room) run() {
 func (self *room) processMessage(clientMsg *clientMsg) ([]byte, error) {
 	msg := Msg{}
 
-	if err := json.Unmarshal(clientMsg.msg, &msg); err == nil {
-		switch msg.Cmd {
-		case "vote":
-			log.Printf(" -- received vote: %s, %s\n", msg.Vote, clientMsg.msg)
-			// save the vote, send the MsgSendVote message
-			clientMsg.client.vote = msg.Vote
+	if err := json.Unmarshal(clientMsg.msg, &msg); err != nil {
+		return nil, errors.Wrap(err, "Error unmarshaling message")
+	}
 
-			for client := range self.clients {
-				log.Printf(" -- client %s voted %s\n", client.name, client.vote)
-			}
+	switch msg.Cmd {
+	case "vote":
+		// save the vote, send the MsgSendVote message
+		clientMsg.client.vote = msg.Vote
 
-			sendVote, err := json.Marshal(&Msg{Cmd: "vote", User: clientMsg.client.name})
-			if err == nil {
-				return sendVote, nil
-			}
-			log.Printf(" -- error encoding message: %s\n", err)
+		sendVote, err := json.Marshal(&Msg{Cmd: "vote", User: clientMsg.client.name})
+		if err != nil {
+			return nil, errors.Wrap(err, "Error marshaling vote message")
+		}
+		return sendVote, nil
 
-		case "showVotes":
-			log.Printf(" -- showing votes\n")
-			votesMsg := Msg{Cmd: "showVotes", VoteList: make(map[string]string)}
+	case "showVotes":
+		votesMsg := Msg{Cmd: "showVotes", VoteList: make(map[string]string)}
 
-			for client := range self.clients {
-				log.Printf(" -- client %s voted %s\n", client.name, client.vote)
-				votesMsg.VoteList[client.name] = client.vote
-			}
-
-			sendVotes, err := json.Marshal(&votesMsg)
-			if err == nil {
-				return sendVotes, nil
-			}
-			log.Printf(" -- error encoding message: %s\n", err)
-
-		case "clearVotes":
-			log.Printf(" -- clearing votes\n")
-			for client := range self.clients {
-				client.vote = "";
-			}
-
-			sendClearVotes, err := json.Marshal(&Msg{Cmd: "clearVotes"})
-			if err == nil {
-				return sendClearVotes, nil
-			}
-			log.Printf(" -- error encoding message: %s\n", err)
-
-		case "storyDesc":
-			sendStoryDesc, err := json.Marshal(&Msg{Cmd: "storyDesc", StoryDesc: msg.StoryDesc})
-			if err == nil {
-				return sendStoryDesc, nil
-			}
-			log.Printf(" -- error encoding message: %s\n", err)
-
-		default:
-			log.Printf(" -- unknown command: %s\n", msg.Cmd)
+		for client := range self.clients {
+			votesMsg.VoteList[client.name] = client.vote
 		}
 
-	} else {
-		log.Printf(" -- error decoding message: %s\n", err)
-	}
+		sendVotes, err := json.Marshal(&votesMsg)
+		if err != nil {
+			return nil, errors.Wrap(err, "Error marshaling showVotes message")
+		}
+		return sendVotes, nil
 
-	sendError, err := json.Marshal(&Msg{Cmd: "error", Msg: "Error processing message"}) // TODO
-	if err != nil {
-		return nil, err
-	}
+	case "clearVotes":
+		for client := range self.clients {
+			client.vote = "";
+		}
 
-	return sendError, nil
+		sendClearVotes, err := json.Marshal(&Msg{Cmd: "clearVotes"})
+		if err != nil {
+			return nil, errors.Wrap(err, "Error marshaling clearVotes message")
+		}
+		return sendClearVotes, nil
+
+	case "storyDesc":
+		sendStoryDesc, err := json.Marshal(&Msg{Cmd: "storyDesc", StoryDesc: msg.StoryDesc})
+		if err != nil {
+			return nil, errors.Wrap(err, "Error marshaling storyDesc message")
+		}
+		return sendStoryDesc, nil
+
+	default:
+		return nil, errors.Errorf("Unknown command %s", msg.Cmd)
+	}
 }

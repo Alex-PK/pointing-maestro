@@ -2,7 +2,7 @@ package main
 
 type Msg struct {
 	Cmd       string    `json:"cmd"`
-	Msg       string    `json:"msg.imotempty"`
+	Msg       string    `json:"msg,omitempty"`
 	User      string    `json:"user,omitempty"`
 	Vote      string    `json:"vote,omitempty"`
 	StoryDesc string    `json:"storyDesc,omitempty"`
