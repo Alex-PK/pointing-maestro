@@ -14,13 +14,13 @@ type client struct {
 
 type clientMsg struct {
 	client *client
-	msg []byte
+	msg    []byte
 }
 
 func (self *client) read() {
 	for {
 		if _, msg, err := self.socket.ReadMessage(); err == nil {
-			self.room.msg <- &clientMsg{client: self, msg: msg }
+			self.room.msg <- &clientMsg{client: self, msg: msg}
 		} else {
 			break
 		}
@@ -38,4 +38,3 @@ func (self *client) write() {
 
 	self.socket.Close()
 }
-

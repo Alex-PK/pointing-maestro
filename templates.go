@@ -1,10 +1,10 @@
 package main
 
 import (
-	"sync"
+	"html/template"
 	"net/http"
 	"path/filepath"
-	"html/template"
+	"sync"
 )
 
 type templates struct {
@@ -17,9 +17,9 @@ func newTemplates() *templates {
 }
 
 func (self *templates) render(dest http.ResponseWriter, name string, data interface{}) {
-	self.lock.RLock();
+	self.lock.RLock()
 	tpl, ok := self.tpls[name]
-	if !ok 	{
+	if !ok {
 		self.lock.RUnlock()
 		self.lock.Lock()
 		tpl = template.Must(template.ParseFiles(filepath.Join("tpl", name)))
@@ -28,4 +28,3 @@ func (self *templates) render(dest http.ResponseWriter, name string, data interf
 	}
 	tpl.Execute(dest, data)
 }
-

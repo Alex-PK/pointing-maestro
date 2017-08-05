@@ -1,9 +1,9 @@
 package main
 
 import (
-	"net/http"
 	"github.com/gorilla/mux"
 	"log"
+	"net/http"
 )
 
 type homeHandler struct {
@@ -27,7 +27,7 @@ func main() {
 
 	http.Handle("/", router)
 
-	if err:= http.ListenAndServe(":8080", nil); err != nil {
+	if err := http.ListenAndServe(":8080", nil); err != nil {
 		log.Fatal("Cannot run server:", err)
 	}
 }

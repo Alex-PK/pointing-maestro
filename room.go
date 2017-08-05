@@ -1,11 +1,11 @@
 package main
 
 import (
-	"github.com/gorilla/websocket"
-	"log"
 	"encoding/json"
-	"sync"
+	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
+	"log"
+	"sync"
 )
 
 const (
@@ -31,7 +31,7 @@ func newRooms() *rooms {
 }
 
 func (self *rooms) get(name string) *room {
-	self.lock.RLock();
+	self.lock.RLock()
 	room, ok := self.rooms[name]
 	if !ok {
 		self.lock.RUnlock()
@@ -135,7 +135,7 @@ func (self *room) processMessage(clientMsg *clientMsg) ([]byte, error) {
 
 	case "clearVotes":
 		for client := range self.clients {
-			client.vote = "";
+			client.vote = ""
 		}
 
 		sendClearVotes, err := json.Marshal(&Msg{Cmd: "clearVotes"})

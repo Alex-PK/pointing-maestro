@@ -1,13 +1,13 @@
 package main
 
 import (
-	"net/http"
 	"github.com/gorilla/mux"
+	"net/http"
 )
 
 type roomHandler struct {
 	rooms *rooms
-	tpls *templates
+	tpls  *templates
 }
 
 func (self *roomHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {

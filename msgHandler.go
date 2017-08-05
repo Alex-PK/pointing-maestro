@@ -1,9 +1,9 @@
 package main
 
 import (
-	"net/http"
 	"github.com/gorilla/mux"
 	"log"
+	"net/http"
 )
 
 type msgHandler struct {
